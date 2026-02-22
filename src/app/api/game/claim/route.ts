@@ -19,7 +19,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 })
         }
 
-        const { envelopeId, simulateEmail } = body
+        const { envelopeId, simulateEmail, sendSimEmail } = body
         if (!envelopeId) {
             return NextResponse.json({ error: 'Thiếu ID bao lì xì' }, { status: 400 })
         }
@@ -115,7 +115,10 @@ export async function POST(request: Request) {
 
         // Fire-and-forget: send email notification (don't block the response)
         // Defer email if user has pending retry or bonus — combined email sent later
-        if (result.claimedByEmail && !result.isTest && !result.hasBonusRound && !result.hasRetryAvailable && result.emailEnabled) {
+        const shouldSendEmail = result.claimedByEmail && result.emailEnabled &&
+            !result.hasBonusRound && !result.hasRetryAvailable &&
+            (!result.isTest || sendSimEmail)
+        if (shouldSendEmail) {
             sendLiXiEmail(result.claimedByEmail, result.claimedBy, result.amount, result.imageUrl, result.wish, result.thiepUrl).catch(err =>
                 console.error('Email send failed (non-blocking):', err)
             )

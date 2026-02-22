@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Quicksand, Dancing_Script } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import { Providers } from './providers'
 import './globals.css'
 
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html lang="vi" className={`${quicksand.variable} ${dancingScript.variable}`}>
             <body className="font-sans">
                 <Providers>{children}</Providers>
+                <Analytics />
             </body>
         </html>
     )

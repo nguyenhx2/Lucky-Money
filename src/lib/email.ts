@@ -138,7 +138,7 @@ export async function sendLiXiEmail(
   const thiepPath = thiepUrl || THIEP_IMAGES[Math.floor(Math.random() * THIEP_IMAGES.length)]
   const thiepAsset = readLocalAsset(thiepPath)
   const liXiAsset = readLocalAsset(imageUrl)
-  const logoAsset = readLocalAsset('/images/NTQ-logo-white.webp')
+  const logoAsset = readLocalAsset('/images/NTQ-logo-white.png')
 
   const html = buildEmailHtml(
     name,
@@ -360,7 +360,7 @@ export async function sendCombinedLiXiEmail(
   const thiep2Asset = readLocalAsset(thiep2Path)
   const liXi1Asset = readLocalAsset(firstDraw.imageUrl)
   const liXi2Asset = readLocalAsset(bonusDraw.imageUrl)
-  const logoAsset = readLocalAsset('/images/NTQ-logo-white.webp')
+  const logoAsset = readLocalAsset('/images/NTQ-logo-white.png')
 
   // Ensure unique CIDs for 2 different thiệp/lì xì
   if (thiep2Asset && thiep1Asset && thiep2Asset.cid === thiep1Asset.cid) {

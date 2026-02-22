@@ -275,6 +275,7 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
 
     // Simulate state
     const [simEmail, setSimEmail] = useState('test@example.com')
+    const [simSendEmail, setSimSendEmail] = useState(true)
     const [simResult, setSimResult] = useState<string | null>(null)
 
     // Email state
@@ -563,11 +564,11 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
             const res = await fetch('/api/game/claim', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ envelopeId, simulateEmail: simEmail }),
+                body: JSON.stringify({ envelopeId, simulateEmail: simEmail, sendSimEmail: simSendEmail }),
             })
             const data = await res.json()
             if (res.ok) {
-                setSimResult(`${simEmail} nhận ${formatCurrency(data.amount)}`)
+                setSimResult(`${simEmail} nhận ${formatCurrency(data.amount)}${simSendEmail ? ' — Email đã gửi 📧' : ''}`)
                 onSessionCreated()
             } else {
                 showToast(
@@ -582,7 +583,7 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
         } finally {
             setAdminLoading(false)
         }
-    }, [simEmail, onSessionCreated])
+    }, [simEmail, simSendEmail, onSessionCreated])
 
     // ─── Allowed Emails Handlers ───
     const fetchAllowedEmails = useCallback(async () => {
@@ -1618,6 +1619,16 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
                                                 className="w-full px-4 py-3 bg-white/5 border border-yellow-500/20 rounded-xl text-white text-sm focus:outline-none focus:border-yellow-400/50"
                                             />
                                         </div>
+
+                                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                                            <div className={`w-10 h-5 rounded-full transition-colors ${simSendEmail ? 'bg-yellow-500' : 'bg-white/10'} relative shrink-0`}
+                                                onClick={() => setSimSendEmail(v => !v)}>
+                                                <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${simSendEmail ? 'translate-x-5' : 'translate-x-0'}`} />
+                                            </div>
+                                            <span className="text-sm text-yellow-200/70">
+                                                Gửi email thật tới địa chỉ trên khi giả lập
+                                            </span>
+                                        </label>
 
                                         {simResult && (
                                             <div className="bg-white/5 rounded-xl p-4 border border-yellow-500/10 text-sm text-yellow-200/70">
