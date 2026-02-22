@@ -275,8 +275,11 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
 
     // Simulate state
     const [simEmail, setSimEmail] = useState('test@example.com')
-    const [simSendEmail, setSimSendEmail] = useState(true)
     const [simResult, setSimResult] = useState<string | null>(null)
+
+    // Denomination edit mode state
+    const [editingDenoms, setEditingDenoms] = useState(false)
+    const [editDenomMap, setEditDenomMap] = useState<Record<number, number>>({})
 
     // Email state
     const [emailSending, setEmailSending] = useState<string | null>(null)
@@ -609,6 +612,38 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
             setAdminLoading(false)
         }
     }, [simEmail, showToast])
+
+    const handleApplyDenomEdit = useCallback(async () => {
+        if (!gameSession?.id) return
+        const denomTargets = Object.entries(editDenomMap)
+            .filter(([, cnt]) => (cnt as number) > 0)
+            .map(([amt, cnt]) => ({ amount: +amt, count: cnt as number }))
+        if (denomTargets.length === 0) {
+            showToast('Cần ít nhất 1 mệnh giá', 'error')
+            return
+        }
+        setAdminLoadingText('Đang cập nhật phân phối...')
+        setAdminLoading(true)
+        try {
+            const res = await fetch('/api/game/redistribute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: gameSession.id, denomTargets }),
+            })
+            if (res.ok) {
+                showToast('Đã cập nhật phân phối!', 'success')
+                setEditingDenoms(false)
+                onSessionCreated()
+            } else {
+                const d = await res.json()
+                showToast(d.error || 'Lỗi', 'error')
+            }
+        } catch {
+            showToast('Lỗi kết nối', 'error')
+        } finally {
+            setAdminLoading(false)
+        }
+    }, [gameSession?.id, editDenomMap, showToast, onSessionCreated])
 
     // ─── Allowed Emails Handlers ───
     const fetchAllowedEmails = useCallback(async () => {
@@ -1399,39 +1434,126 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
                                                     )}
 
                                                     {/* Denomination breakdown table */}
-                                                    {allDenomBreakdown.length > 0 && (
-                                                        <div className="overflow-x-auto rounded-xl border border-yellow-500/10">
-                                                            <table className="w-full text-sm">
-                                                                <thead>
-                                                                    <tr className="bg-white/5 text-yellow-200/50 text-xs">
-                                                                        <th className="px-3 py-2 text-left">Mệnh giá</th>
-                                                                        <th className="px-3 py-2 text-center">Tổng</th>
-                                                                        <th className="px-3 py-2 text-center">Đã mở</th>
-                                                                        <th className="px-3 py-2 text-center">Còn lại</th>
-                                                                        <th className="px-3 py-2 text-right">Giá trị</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {allDenomBreakdown.map(d => (
-                                                                        <tr key={d.amount} className="border-t border-yellow-500/5">
-                                                                            <td className="px-3 py-2 text-yellow-200 font-medium">{formatCurrency(d.amount)}</td>
-                                                                            <td className="px-3 py-2 text-center text-yellow-200/60">{d.total}</td>
-                                                                            <td className="px-3 py-2 text-center text-yellow-300">{d.opened}</td>
-                                                                            <td className="px-3 py-2 text-center text-yellow-200/40">{d.remaining}</td>
-                                                                            <td className="px-3 py-2 text-right text-yellow-300/80">{formatCurrency(d.amount * d.total)}</td>
-                                                                        </tr>
-                                                                    ))}
-                                                                    <tr className="border-t-2 border-yellow-500/20 bg-white/5 font-bold">
-                                                                        <td className="px-3 py-2 text-yellow-200">Tổng</td>
-                                                                        <td className="px-3 py-2 text-center text-yellow-200">{allEnvelopes.length}</td>
-                                                                        <td className="px-3 py-2 text-center text-yellow-300">{claimedEnvelopes.length}</td>
-                                                                        <td className="px-3 py-2 text-center text-yellow-200/60">{unopenedEnvelopes.length}</td>
-                                                                        <td className="px-3 py-2 text-right text-yellow-300">{formatCurrency(allTotal)}</td>
-                                                                    </tr>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    )}
+                                                    {allDenomBreakdown.length > 0 && (() => {
+                                                        const mainEnvelopes = allEnvelopes.filter((e: any) => !e.isBonusEnvelope)
+                                                        const bonusEnvelopes = allEnvelopes.filter((e: any) => e.isBonusEnvelope)
+                                                        const targetMainCount = gameSession?.quantity ?? mainEnvelopes.length
+                                                        const editTotal = editingDenoms
+                                                            ? Object.entries(editDenomMap).reduce((s, [amt, cnt]) => s + (+amt) * cnt, 0)
+                                                            : allTotal
+                                                        // Main count only (what user is editing)
+                                                        const editMainCount = editingDenoms
+                                                            ? Object.values(editDenomMap).reduce((s, c) => s + c, 0)
+                                                            : mainEnvelopes.length
+                                                        // Full total = main + bonus (for display)
+                                                        const editTotalCount = editMainCount + bonusEnvelopes.length
+                                                        const countDelta = editMainCount - targetMainCount
+                                                        const countMismatch = editingDenoms && countDelta !== 0
+                                                        const budgetDelta = editTotal - (gameSession?.budget || 0)
+                                                        return (
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center justify-between">
+                                                                    <p className="text-yellow-200/40 text-xs">Phân phối mệnh giá</p>
+                                                                    {!editingDenoms ? (
+                                                                        <button onClick={() => {
+                                                                            const map: Record<number, number> = {}
+                                                                            allDenomBreakdown.forEach(d => { map[d.amount] = d.total })
+                                                                            setEditDenomMap(map)
+                                                                            setEditingDenoms(true)
+                                                                        }} className="text-xs px-3 py-1 bg-white/10 text-yellow-200/60 rounded-lg hover:bg-white/15 transition-colors flex items-center gap-1.5">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                                            </svg>
+                                                                            Chỉnh
+                                                                        </button>
+                                                                    ) : (
+                                                                        <div className="flex gap-1.5">
+                                                                            <button onClick={handleApplyDenomEdit} disabled={budgetDelta > 0 || editMainCount === 0 || countMismatch}
+                                                                                className="text-xs px-3 py-1 bg-green-700/60 text-green-200 rounded-lg hover:bg-green-600/70 transition-colors disabled:opacity-40 flex items-center gap-1">
+                                                                                ✓ Áp dụng
+                                                                            </button>
+                                                                            <button onClick={() => setEditingDenoms(false)}
+                                                                                className="text-xs px-3 py-1 bg-white/10 text-yellow-200/40 rounded-lg hover:bg-white/15 transition-colors">
+                                                                                ✗ Huỷ
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="overflow-x-auto rounded-xl border border-yellow-500/10">
+                                                                    <table className="w-full text-sm">
+                                                                        <thead>
+                                                                            <tr className="bg-white/5 text-yellow-200/50 text-xs">
+                                                                                <th className="px-3 py-2 text-left">Mệnh giá</th>
+                                                                                <th className="px-3 py-2 text-center">Tổng</th>
+                                                                                <th className="px-3 py-2 text-center">Đã mở</th>
+                                                                                <th className="px-3 py-2 text-center">Còn lại</th>
+                                                                                <th className="px-3 py-2 text-right">Giá trị</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            {allDenomBreakdown.map(d => {
+                                                                                const editVal = editDenomMap[d.amount] ?? d.total
+                                                                                const displayTotal = editingDenoms ? editVal : d.total
+                                                                                const displayRemaining = displayTotal - d.opened
+                                                                                return (
+                                                                                    <tr key={d.amount} className="border-t border-yellow-500/5">
+                                                                                        <td className="px-3 py-2 text-yellow-200 font-medium">{formatCurrency(d.amount)}</td>
+                                                                                        <td className="px-3 py-2 text-center">
+                                                                                            {editingDenoms ? (
+                                                                                                <input type="number" min={d.opened} step={1} value={editVal}
+                                                                                                    onChange={e => setEditDenomMap(prev => ({ ...prev, [d.amount]: Math.max(d.opened, parseInt(e.target.value) || 0) }))}
+                                                                                                    className="w-16 px-2 py-1 bg-white/10 border border-yellow-500/30 rounded-lg text-yellow-200 text-center text-sm focus:outline-none focus:border-yellow-400/60"
+                                                                                                />
+                                                                                            ) : (
+                                                                                                <span className="text-yellow-200/60">{d.total}</span>
+                                                                                            )}
+                                                                                        </td>
+                                                                                        <td className="px-3 py-2 text-center text-yellow-300">{d.opened}</td>
+                                                                                        <td className="px-3 py-2 text-center text-yellow-200/40">{displayRemaining}</td>
+                                                                                        <td className="px-3 py-2 text-right text-yellow-300/80">{formatCurrency(d.amount * displayTotal)}</td>
+                                                                                    </tr>
+                                                                                )
+                                                                            })}
+                                                                            {/* Total row — shows main+bonus full total */}
+                                                                            <tr className="border-t-2 border-yellow-500/20 bg-white/5 font-bold">
+                                                                                <td className="px-3 py-2 text-yellow-200">Tổng</td>
+                                                                                <td className={`px-3 py-2 text-center ${countMismatch ? 'text-red-400' : 'text-yellow-200'}`}>
+                                                                                    {editTotalCount}
+                                                                                    {countMismatch && <span className="text-red-400 text-[10px] ml-1">(chính: {editMainCount}/{targetMainCount})</span>}
+                                                                                </td>
+                                                                                <td className="px-3 py-2 text-center text-yellow-300">{claimedEnvelopes.length}</td>
+                                                                                <td className="px-3 py-2 text-center text-yellow-200/60">{editTotalCount - claimedEnvelopes.length}</td>
+                                                                                <td className="px-3 py-2 text-right text-yellow-300">{formatCurrency(editTotal)}</td>
+                                                                            </tr>
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                                {/* Info bar: Fixed / Bonus / Total */}
+                                                                <div className="flex gap-3 text-[11px] text-yellow-200/40 px-1">
+                                                                    <span>🧧 <span className="text-yellow-200/60">{editMainCount}</span> bao chính</span>
+                                                                    {bonusEnvelopes.length > 0 && <span>🎁 <span className="text-purple-300/70">{bonusEnvelopes.length}</span> bonus</span>}
+                                                                    <span className="text-yellow-200/60 font-medium">= {editTotalCount} tổng</span>
+                                                                </div>
+                                                                {/* Count mismatch warning */}
+                                                                {countMismatch && (
+                                                                    <div className="text-xs px-3 py-2 rounded-lg border bg-red-900/20 border-red-500/20 text-red-300">
+                                                                        {countDelta > 0
+                                                                            ? `⚠️ Thừa ${countDelta} bao chính! Tổng bao chính phải bằng ${targetMainCount}.`
+                                                                            : `⚠️ Thiếu ${Math.abs(countDelta)} bao chính! Tổng bao chính phải bằng ${targetMainCount}.`}
+                                                                    </div>
+                                                                )}
+                                                                {/* Budget warning in edit mode */}
+                                                                {editingDenoms && budgetDelta !== 0 && (
+                                                                    <div className={`text-xs px-3 py-2 rounded-lg border ${budgetDelta > 0 ? 'bg-red-900/20 border-red-500/20 text-red-300' : 'bg-green-900/20 border-green-500/20 text-green-300'}`}>
+                                                                        {budgetDelta > 0
+                                                                            ? `⚠️ Vượt ngân sách ${formatCurrency(budgetDelta)}! Giảm số lượng hoặc tăng ngân sách.`
+                                                                            : `✓ Dư ngân sách ${formatCurrency(Math.abs(budgetDelta))}`}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    })()}
                                                 </div>
                                             )}
                                         </div>
