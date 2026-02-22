@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model GameSession {
+  id               String         @id @default(cuid())
+  budget           Int
+  quantity         Int
+  createdBy        String
+  isActive         Boolean        @default(true)
+  startAt          DateTime?
+  maxPicksPerUser  Int            @default(1)
+  isTestMode       Boolean        @default(false)
+  autoplayMusic    Boolean        @default(true)
+  bgKey            String         @default("default")
+  bgRotateInterval Int            @default(0)
+  timezone         String         @default("Asia/Ho_Chi_Minh")
+  createdAt        DateTime       @default(now())
+
+  // Feature: Bonus Round (Lượt 2 bí mật)
+  bonusEnabled       Boolean      @default(false)
+  bonusBudgetPercent Int          @default(0)
+
+  // Feature: Auto-Retry (% users can come back)
+  retryPercent       Int          @default(0)
+
+  // Feature: Email notification toggle
+  emailEnabled       Boolean      @default(true)
+
+  // Feature: Budget source (manual entry or donate pool)
+  budgetSource       String       @default("manual")  // "manual" | "donate"
+
+  envelopes     Envelope[]
+  retryGrants   RetryGrant[]
+  bonusGrants   BonusGrant[]
+  denominations Denomination[]
+}
+
+model Envelope {
+  id              String      @id @default(cuid())
+  amount          Int
+  isOpened        Boolean     @default(false)
+  imageUrl        String?
+  wish            String?
+  thiepUrl        String?
+  sessionId       String
+  session         GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  claimedBy       String?
+  claimedByEmail  String?
+  claimedAt       DateTime?
+  positionTop     Float       @default(50)
+  positionLeft    Float       @default(50)
+  positionDelay   Float       @default(0)
+  isBonusEnvelope Boolean     @default(false)
+
+  @@index([sessionId, isOpened])
+  @@index([sessionId, claimedByEmail])
+}
+
+model RetryGrant {
+  id             String      @id @default(cuid())
+  sessionId      String
+  session        GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userEmail      String
+  used           Boolean     @default(false)
+  isAutoAssigned Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+
+  @@index([sessionId, userEmail])
+}
+
+model BonusGrant {
+  id            String      @id @default(cuid())
+  sessionId     String
+  session       GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userEmail     String
+  used          Boolean     @default(false)
+  bonusAmount   Int?
+  bonusEnvId    String?
+  bonusWish     String?
+  bonusThiepUrl String?
+  bonusImageUrl String?
+  createdAt     DateTime    @default(now())
+
+  @@unique([sessionId, userEmail])
+  @@index([sessionId, userEmail])
+}
+
+model Denomination {
+  id        String       @id @default(cuid())
+  sessionId String?
+  session   GameSession?  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  amount    Int
+  weight    Int          @default(1)
+  createdAt DateTime     @default(now())
+
+  @@index([sessionId])
+}
+
+model AllowedEmail {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  label     String?
+  createdAt DateTime @default(now())
+}
+
+// Tracks who donated to the lì xì budget pool
+model DonateContributor {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  amount    Int      // VND contribution amount
+  note      String?  // Optional note / message
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+// Singleton settings for DonateModal visibility (id is always "singleton")
+model DonateSettings {
+  id                  String  @id @default("singleton")
+  showPublicView      Boolean @default(true)   // Show modal content to regular (non-contributor) users
+  showContributorView Boolean @default(true)   // Show prize stats & winners to contributors
+}

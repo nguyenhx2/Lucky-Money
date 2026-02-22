@@ -1,0 +1,511 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-quicksand), 'Quicksand', sans-serif;
+  background: #2D0000;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4AF37;
+  border-radius: 3px;
+}
+
+/* Thin scrollbar for envelope grid & admin panels */
+.envelope-scroll::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.envelope-scroll::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.envelope-scroll::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.4);
+  border-radius: 2px;
+}
+
+.envelope-scroll::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.7);
+}
+
+/* Text shadow utility */
+@layer utilities {
+  .text-shadow-gold {
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5), 0 0 20px rgba(212, 175, 55, 0.3);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  }
+
+  .text-shadow-dark {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ── Falling petal animation (GPU-accelerated) ── */
+.petal {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@keyframes petal-fall-1 {
+  0% {
+    transform: translate3d(0, -5vh, 0) rotate(0deg);
+    opacity: 0.9;
+  }
+
+  25% {
+    transform: translate3d(30px, 25vh, 0) rotate(90deg);
+  }
+
+  50% {
+    transform: translate3d(-20px, 50vh, 0) rotate(180deg);
+  }
+
+  75% {
+    transform: translate3d(40px, 75vh, 0) rotate(270deg);
+  }
+
+  100% {
+    transform: translate3d(10px, 105vh, 0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes petal-fall-2 {
+  0% {
+    transform: translate3d(0, -5vh, 0) rotate(45deg);
+    opacity: 0.8;
+  }
+
+  30% {
+    transform: translate3d(-40px, 30vh, 0) rotate(135deg);
+  }
+
+  60% {
+    transform: translate3d(25px, 60vh, 0) rotate(225deg);
+  }
+
+  100% {
+    transform: translate3d(-15px, 105vh, 0) rotate(405deg);
+    opacity: 0;
+  }
+}
+
+.petal:nth-child(odd) {
+  animation: petal-fall-1 var(--fall-duration, 8s) linear infinite;
+}
+
+.petal:nth-child(even) {
+  animation: petal-fall-2 var(--fall-duration, 10s) linear infinite;
+}
+
+/* ── Envelope effects (GPU-compositable: filter instead of box-shadow) ── */
+@keyframes envelope-glow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px rgba(212, 175, 55, 0.3));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.5));
+  }
+}
+
+.envelope-glow {
+  animation: envelope-glow 2s ease-in-out infinite;
+  will-change: filter;
+}
+
+/* Heartbeat pulse on hover */
+@keyframes heartbeat {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  14% {
+    transform: scale(1.18);
+  }
+
+  28% {
+    transform: scale(1);
+  }
+
+  42% {
+    transform: scale(1.12);
+  }
+
+  56% {
+    transform: scale(1);
+  }
+}
+
+.envelope-heartbeat:hover {
+  filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.4));
+}
+
+/* Envelope pulse glow behind the card on hover */
+@keyframes envelope-pulse-glow {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* Hover particles — reuse click-particle-burst animation */
+.envelope-hover-particle {
+  pointer-events: none;
+  z-index: 50;
+  will-change: transform, opacity;
+  animation: click-particle-burst 1.2s ease-out forwards;
+  opacity: 0.35;
+}
+
+/* Nhận Lộc button pulse */
+@keyframes nhan-loc-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4);
+  }
+
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 20px 6px rgba(234, 179, 8, 0.25);
+  }
+}
+
+.animate-nhan-loc-pulse {
+  animation: nhan-loc-pulse 2s ease-in-out infinite;
+}
+
+/* Bamboo pole with knot pattern */
+.bamboo-pole {
+  background:
+    /* Knot marks every ~100px */
+    repeating-linear-gradient(90deg,
+      transparent 0px,
+      transparent 90px,
+      rgba(30, 60, 10, 0.6) 90px,
+      rgba(50, 80, 20, 0.4) 94px,
+      rgba(30, 60, 10, 0.6) 98px,
+      transparent 98px,
+      transparent 200px),
+    /* Base bamboo green gradient */
+    linear-gradient(180deg, #5D8233, #3D5A1E);
+  border-radius: 8px;
+  box-shadow:
+    inset -2px 0 4px rgba(0, 0, 0, 0.3),
+    inset 2px 0 4px rgba(255, 255, 255, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+/* Bamboo knot ring detail */
+.bamboo-pole::before,
+.bamboo-pole::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: inherit;
+}
+
+.bamboo-pole::before {
+  left: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15), transparent 30%, rgba(255, 255, 255, 0.08));
+}
+
+.bamboo-pole::after {
+  right: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.15));
+}
+
+/* Firecracker body */
+.firecracker-body {
+  background: linear-gradient(180deg, #dc2626, #991b1b);
+  border: 1px solid rgba(255, 200, 50, 0.3);
+  box-shadow: 0 0 4px rgba(220, 50, 50, 0.4);
+  animation: firecracker-glow 2s ease-in-out infinite;
+}
+
+@keyframes firecracker-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(220, 50, 50, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 8px rgba(255, 100, 50, 0.6), 0 0 12px rgba(255, 200, 50, 0.2);
+  }
+}
+
+/* Envelope hanging string */
+.envelope-string {
+  background: linear-gradient(180deg,
+      #D4AF37 0%,
+      #B8860B 30%,
+      #DAA520 60%,
+      #D4AF37 100%);
+  width: 2px;
+}
+
+/* Gentle swaying for hanging envelopes */
+@keyframes envelope-sway {
+
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+.envelope-hang {
+  transform-origin: top center;
+  animation: envelope-sway var(--sway-duration, 3s) ease-in-out infinite;
+  will-change: transform;
+  transition: filter 0.3s ease;
+  contain: layout style;
+}
+
+.envelope-hang:hover {
+  animation-play-state: paused;
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Floating lì xì background */
+@keyframes floating-lixi {
+
+  0%,
+  100% {
+    transform: translateY(0) scale(1) rotate(var(--float-rotate, 0deg));
+  }
+
+  50% {
+    transform: translateY(-20px) scale(1.05) rotate(var(--float-rotate, 0deg));
+  }
+}
+
+.floating-lixi {
+  animation: floating-lixi var(--float-duration, 20s) ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+  will-change: transform;
+}
+
+/* Marquee scroll for audio notification */
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-scroll {
+  display: inline-block;
+  animation: marquee-scroll 20s linear infinite;
+}
+
+/* ── Click Particle burst — subtle, faded ── */
+.click-particle {
+  position: fixed;
+  pointer-events: none;
+  font-size: 16px;
+  z-index: 100;
+  will-change: transform, opacity;
+  animation: click-particle-burst 1.4s ease-out forwards;
+  filter: blur(0.5px);
+}
+
+@keyframes click-particle-burst {
+  0% {
+    transform: translate(0, 0) scale(0.3);
+  }
+
+  40% {
+    opacity: inherit;
+  }
+
+  100% {
+    transform: translate(var(--dx, 30px), var(--dy, -50px)) scale(var(--p-scale, 1));
+    opacity: 0;
+  }
+}
+
+/* ── Music notes firework burst ── */
+.music-note-burst {
+  position: fixed;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: music-note-burst 3s ease-out forwards;
+  filter: blur(0.3px);
+}
+
+@keyframes music-note-burst {
+  0% {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: inherit;
+  }
+
+  50% {
+    transform: translate(var(--ndx, 30px), var(--ndy, -60px)) scale(1.1);
+    opacity: 0.12;
+    filter: blur(1px);
+  }
+
+  100% {
+    transform: translate(calc(var(--ndx, 30px) * 1.5), calc(var(--ndy, -60px) * 1.8)) scale(1.5);
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+/* ── Traditional wooden frame bar ── */
+.wooden-frame-bar {
+  background: linear-gradient(90deg,
+      transparent 0%,
+      #e8a0b4 5%,
+      #f0b8c8 15%,
+      #f7d0dc 30%,
+      #f4a8be 50%,
+      #f7d0dc 70%,
+      #f0b8c8 85%,
+      #e8a0b4 95%,
+      transparent 100%);
+  box-shadow:
+    0 1px 3px rgba(200, 100, 130, 0.3),
+    inset 0 1px 1px rgba(255, 220, 230, 0.5);
+}
+
+/* ── Content visibility for scroll perf ── */
+.email-row-virtual {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 44px;
+}
+
+/* ── Rotating sunburst behind result modal ── */
+@keyframes sunburst-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Respect reduced motion for a11y + battery savings ── */
+@media (prefers-reduced-motion: reduce) {
+
+  .petal,
+  .envelope-glow,
+  .envelope-hang,
+  .floating-lixi,
+  .marquee-scroll,
+  .click-particle,
+  .music-note-burst,
+  .sunburst-rotate,
+  .animate-shimmer,
+  .animate-nhan-loc-pulse {
+    animation: none !important;
+  }
+}
+
+.sunburst-rotate {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  background: conic-gradient(from 0deg,
+      rgba(220, 38, 38, 0.5) 0deg,
+      rgba(255, 165, 0, 0.4) 15deg,
+      rgba(220, 38, 38, 0.5) 30deg,
+      rgba(255, 200, 50, 0.35) 45deg,
+      rgba(220, 38, 38, 0.5) 60deg,
+      rgba(255, 165, 0, 0.4) 75deg,
+      rgba(220, 38, 38, 0.5) 90deg,
+      rgba(255, 200, 50, 0.35) 105deg,
+      rgba(220, 38, 38, 0.5) 120deg,
+      rgba(255, 165, 0, 0.4) 135deg,
+      rgba(220, 38, 38, 0.5) 150deg,
+      rgba(255, 200, 50, 0.35) 165deg,
+      rgba(220, 38, 38, 0.5) 180deg,
+      rgba(255, 165, 0, 0.4) 195deg,
+      rgba(220, 38, 38, 0.5) 210deg,
+      rgba(255, 200, 50, 0.35) 225deg,
+      rgba(220, 38, 38, 0.5) 240deg,
+      rgba(255, 165, 0, 0.4) 255deg,
+      rgba(220, 38, 38, 0.5) 270deg,
+      rgba(255, 200, 50, 0.35) 285deg,
+      rgba(220, 38, 38, 0.5) 300deg,
+      rgba(255, 165, 0, 0.4) 315deg,
+      rgba(220, 38, 38, 0.5) 330deg,
+      rgba(255, 200, 50, 0.35) 345deg,
+      rgba(220, 38, 38, 0.5) 360deg);
+  animation: sunburst-spin 20s linear infinite;
+  filter: blur(30px);
+  opacity: 0.5;
+}

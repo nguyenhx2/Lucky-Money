@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e74c3c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c0392b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f1c40f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4af37;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Envelope body -->
+  <rect x="12" y="8" width="40" height="52" rx="4" fill="url(#bg)" stroke="#b71c1c" stroke-width="1"/>
+  <!-- Gold flap -->
+  <path d="M12,8 L32,22 L52,8" fill="none" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Center circle -->
+  <circle cx="32" cy="36" r="12" fill="none" stroke="url(#gold)" stroke-width="2"/>
+  <!-- Lộc character -->
+  <text x="32" y="41" text-anchor="middle" fill="#f1c40f" font-size="14" font-weight="bold" font-family="serif">福</text>
+  <!-- Decorative dots -->
+  <circle cx="20" cy="20" r="1.5" fill="#f1c40f" opacity="0.7"/>
+  <circle cx="44" cy="20" r="1.5" fill="#f1c40f" opacity="0.7"/>
+  <circle cx="20" cy="52" r="1.5" fill="#f1c40f" opacity="0.7"/>
+  <circle cx="44" cy="52" r="1.5" fill="#f1c40f" opacity="0.7"/>
+</svg>
