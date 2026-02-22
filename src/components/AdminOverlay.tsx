@@ -564,11 +564,11 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
             const res = await fetch('/api/game/claim', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ envelopeId, simulateEmail: simEmail, sendSimEmail: simSendEmail }),
+                body: JSON.stringify({ envelopeId, simulateEmail: simEmail }),
             })
             const data = await res.json()
             if (res.ok) {
-                setSimResult(`${simEmail} nhận ${formatCurrency(data.amount)}${simSendEmail ? ' — Email đã gửi 📧' : ''}`)
+                setSimResult(`${simEmail} nhận ${formatCurrency(data.amount)}`)
                 onSessionCreated()
             } else {
                 showToast(
@@ -583,7 +583,32 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
         } finally {
             setAdminLoading(false)
         }
-    }, [simEmail, simSendEmail, onSessionCreated])
+    }, [simEmail, onSessionCreated])
+
+    const handleSimTestEmail = useCallback(async () => {
+        if (!simEmail) return
+        setAdminLoadingText('Đang gửi email thử...')
+        setAdminLoading(true)
+        const testAmount = [50000, 100000, 200000][Math.floor(Math.random() * 3)]
+        try {
+            const res = await fetch('/api/game/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to: simEmail, name: `[Test] ${simEmail}`, amount: testAmount }),
+            })
+            const data = await res.json()
+            if (res.ok) {
+                showToast(`Email thử đã gửi tới ${simEmail} 📧`, 'success')
+                setSimResult(`Email thử gửi tới ${simEmail}: ${formatCurrency(testAmount)}`)
+            } else {
+                showToast(data.error || 'Gửi email thất bại', 'error')
+            }
+        } catch {
+            showToast('Lỗi kết nối', 'error')
+        } finally {
+            setAdminLoading(false)
+        }
+    }, [simEmail, showToast])
 
     // ─── Allowed Emails Handlers ───
     const fetchAllowedEmails = useCallback(async () => {
@@ -1615,20 +1640,19 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
 
                                         <div>
                                             <label className="block text-yellow-200/60 text-sm mb-2">Email giả lập</label>
-                                            <input type="email" value={simEmail} onChange={e => setSimEmail(e.target.value)}
-                                                className="w-full px-4 py-3 bg-white/5 border border-yellow-500/20 rounded-xl text-white text-sm focus:outline-none focus:border-yellow-400/50"
-                                            />
-                                        </div>
-
-                                        <label className="flex items-center gap-3 cursor-pointer select-none">
-                                            <div className={`w-10 h-5 rounded-full transition-colors ${simSendEmail ? 'bg-yellow-500' : 'bg-white/10'} relative shrink-0`}
-                                                onClick={() => setSimSendEmail(v => !v)}>
-                                                <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${simSendEmail ? 'translate-x-5' : 'translate-x-0'}`} />
+                                            <div className="flex gap-2">
+                                                <input type="email" value={simEmail} onChange={e => setSimEmail(e.target.value)}
+                                                    className="flex-1 px-4 py-3 bg-white/5 border border-yellow-500/20 rounded-xl text-white text-sm focus:outline-none focus:border-yellow-400/50"
+                                                />
+                                                <button onClick={handleSimTestEmail} disabled={!simEmail}
+                                                    className="shrink-0 px-4 py-2 bg-blue-700/60 hover:bg-blue-600/70 text-white text-sm font-medium rounded-xl disabled:opacity-40 transition-colors flex items-center gap-2"
+                                                    title="Gửi email thử không liên quan đến quỹ">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+                                                    Gửi email thử
+                                                </button>
                                             </div>
-                                            <span className="text-sm text-yellow-200/70">
-                                                Gửi email thật tới địa chỉ trên khi giả lập
-                                            </span>
-                                        </label>
+                                            <p className="text-white/25 text-xs mt-1">Nhấn “Gửi email thử” để xem trước nội dung email mà không cần mở bao lì xì thật.</p>
+                                        </div>
 
                                         {simResult && (
                                             <div className="bg-white/5 rounded-xl p-4 border border-yellow-500/10 text-sm text-yellow-200/70">
