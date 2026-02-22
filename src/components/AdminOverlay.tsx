@@ -1456,8 +1456,11 @@ export const AdminOverlay: React.FC<AdminOverlayProps> = ({ onClose, onSessionCr
                                                                     <p className="text-yellow-200/40 text-xs">Phân phối mệnh giá</p>
                                                                     {!editingDenoms ? (
                                                                         <button onClick={() => {
+                                                                            // Only count MAIN envelopes per denomination
                                                                             const map: Record<number, number> = {}
-                                                                            allDenomBreakdown.forEach(d => { map[d.amount] = d.total })
+                                                                            mainEnvelopes.forEach((e: any) => {
+                                                                                map[e.amount] = (map[e.amount] || 0) + 1
+                                                                            })
                                                                             setEditDenomMap(map)
                                                                             setEditingDenoms(true)
                                                                         }} className="text-xs px-3 py-1 bg-white/10 text-yellow-200/60 rounded-lg hover:bg-white/15 transition-colors flex items-center gap-1.5">
